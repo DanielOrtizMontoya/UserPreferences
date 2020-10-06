@@ -15,7 +15,7 @@ def connect_rabbitmq():
     channel.queue_bind(
         exchange='direct_logs', queue=queue_name, routing_key=key)
     
-    print(' [*][ui] Waiting for logs. To exit press CTRL+C')
+    print('[*][ui] Waiting for logs. To exit press CTRL+C')
                 
     channel.basic_consume(
         queue=queue_name, on_message_callback=callback, auto_ack=True)
