@@ -20,7 +20,6 @@ def create_client_node(db,clientName):
     db.run(command)
     print("[*][store] Client node name: {} , was created".format(clientName))
     
-
 def banking_service_exists(db,clientName,bankingService):
     command = "MATCH (s:BankingService {name:'%(bankingService)s', client:'%(name)s' }) return s" %{"bankingService": bankingService,
                                                                                                     "name":clientName}   

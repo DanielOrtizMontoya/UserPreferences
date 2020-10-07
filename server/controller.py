@@ -22,7 +22,6 @@ def check_client_exists(password, clientName):
     else:
         return False
     
-        
 def client_preferences(password, clientName):
     first_preference = ""
     second_preference = ""

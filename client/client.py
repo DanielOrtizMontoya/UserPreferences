@@ -60,7 +60,6 @@ def send_rabbitmq(action):
 
     connection.close()
     
-
 def run():
     read_parameters()
     take_action()

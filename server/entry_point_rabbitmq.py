@@ -44,8 +44,7 @@ def callback(ch, method, properties, body):
                                           message["clientName"])    
         key = "UserPreferencesServiceOutput"
         ch.basic_publish(
-            exchange='direct_logs', routing_key=key, body=message)
-        
+            exchange='direct_logs', routing_key=key, body=message)     
     else: print("[x][ep rabbit] Action null")
     
 def write_new_client_and_bankingservice(password,
@@ -55,9 +54,9 @@ def write_new_client_and_bankingservice(password,
     print("[*][ep rabbit] Successful registration")
            
 def read_client_preferences(password, clientName):
+    action = "response"
     if(ct.check_client_exists(password, clientName)):
         pref_1, pref_2, pref_3 = ct.client_preferences(password, clientName)
-        action = "response"
         
         message = json.dumps({
             "action": action,
@@ -65,18 +64,24 @@ def read_client_preferences(password, clientName):
             "pref_1": pref_1,
             "pref_2": pref_2,
             "pref_3": pref_3,     
-        })
-        
-        return message
-        
+        })              
     else:
         print("[x][ep rabbit] Client not found") 
 
+        message = json.dumps({
+            "action": "not found",
+            "clientName": "not found",
+            "pref_1": "not found",
+            "pref_2": "not found",
+            "pref_3": "not found",     
+        })
+        
+    return message
+                
 def run():
     read_password_db()
     connect_rabbitmq()
        
-
 if __name__ == '__main__':
     run()
 
