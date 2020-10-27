@@ -4,10 +4,10 @@ import json
 
 def read_parameters():
     global ACTION 
-    global CLIENT_NAME
+    global CLIENT_ID
     global BANKING_SERVICE
     ACTION = ""
-    CLIENT_NAME = ""
+    CLIENT_ID = ""
     BANKING_SERVICE = ""
     
     try:
@@ -21,7 +21,7 @@ def read_parameters():
         exit()
         
     try:
-        CLIENT_NAME = sys.argv[2]
+        CLIENT_ID = sys.argv[2]
     except IndexError:
         print("[x][client] No client name")
         exit()
@@ -50,7 +50,7 @@ def send_rabbitmq(action):
     key = "UserPreferencesServiceInput"
     message = json.dumps({
         "action": action,
-        "clientName": CLIENT_NAME,
+        "clientId": CLIENT_ID,
         "bankingService": BANKING_SERVICE      
     })
     

@@ -37,40 +37,33 @@ def callback(ch, method, properties, body):
     message = json.loads(body)
     if(message["action"] == "write"):
         write_new_client_and_bankingservice(PASSWORD_DB,
-                                            message["clientName"],
+                                            message["clientId"],
                                             message["bankingService"])
     elif(message["action"] == "read"):
         message = read_client_preferences(PASSWORD_DB,
-                                          message["clientName"])    
+                                          message["clientId"])    
         key = "UserPreferencesServiceOutput"
         ch.basic_publish(
             exchange='direct_logs', routing_key=key, body=message)     
     else: print("[x][ep rabbit] Action null")
     
 def write_new_client_and_bankingservice(password,
-                                        clientName,
+                                        clientId,
                                         bankingService):
-    ct.client_connected(password,clientName,bankingService) 
+    ct.client_connected(password,clientId,bankingService) 
     print("[*][ep rabbit] Successful registration")
            
-def read_client_preferences(password, clientName):
-    action = "response"
-    if(ct.check_client_exists(password, clientName)):
-        pref_1, pref_2, pref_3 = ct.client_preferences(password, clientName)
-        
-        message = json.dumps({
-            "action": action,
-            "clientName": clientName,
-            "pref_1": pref_1,
-            "pref_2": pref_2,
-            "pref_3": pref_3,     
-        })              
+def read_client_preferences(password, clientId):
+
+    if(ct.check_client_exists(password, clientId)):
+        message = ct.client_preferences(password, clientId)
+                  
     else:
         print("[x][ep rabbit] Client not found") 
 
         message = json.dumps({
             "action": "not found",
-            "clientName": "not found",
+            "clientId": "not found",
             "pref_1": "not found",
             "pref_2": "not found",
             "pref_3": "not found",     

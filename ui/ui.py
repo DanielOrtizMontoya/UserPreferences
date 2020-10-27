@@ -25,7 +25,7 @@ def connect_rabbitmq():
 def callback(ch, method, properties, body):  
     message = json.loads(body)
     
-    print("--  welcome {} --".format(message["clientName"]))
+    print("--  welcome {} --".format(message["clientId"]))
     print(" ")
     print("*********************************")
     print("*******     {}     **********".format(message["pref_1"]))

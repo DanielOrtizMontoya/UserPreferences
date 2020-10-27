@@ -4,25 +4,25 @@ def connect_to_neo4j_db(password):
     db = Graph(password=password)
     return db
 
-def client_exists(db,clientName):
-    command = "MATCH (client:Client {name:'%(name)s'}) return client" %{"name":clientName}
+def client_exists(db,clientId):
+    command = "MATCH (client:Client {name:'%(name)s'}) return client" %{"name":clientId}
     query= db.run(command)    
     
     if(str(query)==""):
-        print("[x][store] Client node name: {} , does not exist".format(clientName))
+        print("[x][store] Client node name: {} , does not exist".format(clientId))
         return False
     else:
-        print("[*][store] Client node name: {} , exist".format(clientName))
+        print("[*][store] Client node name: {} , exist".format(clientId))
         return True
     
-def create_client_node(db,clientName): 
-    command = "CREATE (client:Client {name:'%(name)s'} )" %{"name":clientName}
+def create_client_node(db,clientId): 
+    command = "CREATE (client:Client {name:'%(name)s'} )" %{"name":clientId}
     db.run(command)
-    print("[*][store] Client node name: {} , was created".format(clientName))
+    print("[*][store] Client node name: {} , was created".format(clientId))
     
-def banking_service_exists(db,clientName,bankingService):
+def banking_service_exists(db,clientId,bankingService):
     command = "MATCH (s:BankingService {name:'%(bankingService)s', client:'%(name)s' }) return s" %{"bankingService": bankingService,
-                                                                                                    "name":clientName}   
+                                                                                                    "name":clientId}   
     query= db.run(command)       
     if(str(query)==""):
         print("[x][store] BankingService node name: {} , does not exist".format(bankingService))
@@ -31,23 +31,23 @@ def banking_service_exists(db,clientName,bankingService):
         print("[*][store] BankingService node name: {} ,exist".format(bankingService))
         return True
     
-def create_banking_service(db,clientName,bankingService):
-    command = "CREATE (bs:BankingService {name:'%(bankingService)s', client:'%(name)s', importance: 0} )" %{"name":clientName,
+def create_banking_service(db,clientId,bankingService):
+    command = "CREATE (bs:BankingService {name:'%(bankingService)s', client:'%(name)s', importance: 0} )" %{"name":clientId,
                                                                                                   "bankingService":bankingService}
     db.run(command)
     print("[*][store] BankingService node name: {} , was created".format(bankingService))
     
-def create_client_banking_relationship(db,clientName,bankingService):
+def create_client_banking_relationship(db,clientId,bankingService):
     command = """MATCH (c:Client {name:'%(clientName)s'})
 MATCH (b:BankingService {name:'%(bankingService)s', client:'%(clientName)s'})
 CREATE (c)-[:USE{graph_weight:[0]}]->(b)
-""" %{"clientName":clientName, "bankingService":bankingService}
+""" %{"clientName":clientId, "bankingService":bankingService}
     db.run(command)
-    print("[*][store] Relationship ({})-USE->({}) , was created".format(clientName,bankingService))
+    print("[*][store] Relationship ({})-USE->({}) , was created".format(clientId,bankingService))
     
-def add_importance_banking_service(db,clientName,bankingService):
+def add_importance_banking_service(db,clientId,bankingService):
     command_read = "MERGE (bs:BankingService {name: '%(bankingService)s', client:'%(name)s'}) return bs" %{"bankingService":bankingService,
-                                                                                                                    "name":clientName}
+                                                                                                                    "name":clientId}
     query=db.run(command_read)
     results = [record for record in query.data()]
     importance = int(results[0]['bs'].get("importance"))
@@ -55,13 +55,13 @@ def add_importance_banking_service(db,clientName,bankingService):
     
     command_write = "MERGE (bs:BankingService {name: '%(bankingService)s', client:'%(name)s'}) SET bs.importance = %(importance)s" %{
                                                                                                             "bankingService":bankingService,
-                                                                                                            "name":clientName,
+                                                                                                            "name":clientId,
                                                                                                             "importance":importance}
     db.run(command_write)
-    print("[*][store] Importance is {} in {}'s {} ".format(importance,clientName,bankingService))
+    print("[*][store] Importance is {} in {}'s {} ".format(importance,clientId,bankingService))
     
-def more_important_banking_services(db, clientName):
-    command = "MATCH (bs:BankingService{client:'%(name)s'}) RETURN bs ORDER BY bs.importance DESC" %{"name": clientName}
+def more_important_banking_services(db, clientId):
+    command = "MATCH (bs:BankingService{client:'%(name)s'}) RETURN bs ORDER BY bs.importance DESC" %{"name": clientId}
     query=db.run(command)
     results = [record for record in query.data()]
     preferences = []
@@ -70,6 +70,9 @@ def more_important_banking_services(db, clientName):
         preferences.append(str(results[i]['bs'].get("name")))
     
     return preferences
+
+#def create_loan_information(db,clientId,bankingService,)
+    
 
     
     
