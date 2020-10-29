@@ -1,5 +1,4 @@
 import pika
-import json
 import controller as ct
 import sys
 
@@ -34,43 +33,13 @@ def connect_rabbitmq():
     channel.start_consuming()
     
 def callback(ch, method, properties, body):  
-    message = json.loads(body)
-    if(message["action"] == "write"):
-        write_new_client_and_bankingservice(PASSWORD_DB,
-                                            message["clientId"],
-                                            message["bankingService"])
-    elif(message["action"] == "read"):
-        message = read_client_preferences(PASSWORD_DB,
-                                          message["clientId"])    
-        key = "UserPreferencesServiceOutput"
-        ch.basic_publish(
-            exchange='direct_logs', routing_key=key, body=message)     
-    else: print("[x][ep rabbit] Action null")
+    ct.client_event(PASSWORD_DB,body)
     
-def write_new_client_and_bankingservice(password,
-                                        clientId,
-                                        bankingService):
-    ct.client_connected(password,clientId,bankingService) 
-    print("[*][ep rabbit] Successful registration")
-           
-def read_client_preferences(password, clientId):
-
-    if(ct.check_client_exists(password, clientId)):
-        message = ct.client_preferences(password, clientId)
-                  
-    else:
-        print("[x][ep rabbit] Client not found") 
-
-        message = json.dumps({
-            "action": "not found",
-            "clientId": "not found",
-            "pref_1": "not found",
-            "pref_2": "not found",
-            "pref_3": "not found",     
-        })
-        
-    return message
-                
+    message=ct.client_preferences(PASSWORD_DB, body)
+    key = "UserPreferencesServiceOutput"
+    ch.basic_publish(
+        exchange='direct_logs', routing_key=key, body=message)     
+                    
 def run():
     read_password_db()
     connect_rabbitmq()

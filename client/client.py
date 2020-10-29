@@ -4,61 +4,110 @@ import json
 
 def read_parameters():
     global ACTION 
-    global CLIENT_ID
-    global BANKING_SERVICE
+    global OPERATION_ID
+    global USER_ID
+
     ACTION = ""
-    CLIENT_ID = ""
-    BANKING_SERVICE = ""
-    
+    OPERATION_ID = ""
+    USER_ID = ""
+   
     try:
         ACTION = sys.argv[1]
     except IndexError:
         print("[x][client] No action")
         exit()
-        
-    if(ACTION != "write" and ACTION != "read"):
-        print("[x][client] invalid action (use write or read)")
-        exit()
-        
-    try:
-        CLIENT_ID = sys.argv[2]
-    except IndexError:
-        print("[x][client] No client name")
-        exit()
-        
-    try:
-        BANKING_SERVICE = sys.argv[3]
-    except IndexError:
-        pass
 
+    try:
+        USER_ID = sys.argv[2]
+    except IndexError:
+        print("[x][client] No user ID")
+        exit()
+        
+    try:
+        OPERATION_ID = int(sys.argv[3])
+    except IndexError:
+        print("[x][client] No ID operation")
+        exit()
+        
+    if(ACTION != "loan" and ACTION != "transfer"):
+        print("[x][client] invalid action (use loan or transfer)")
+        exit()
+        
 def take_action():
-    if(ACTION == "write"):
-        if(BANKING_SERVICE):
-            send_rabbitmq(ACTION)
-        else:
-            print("[x][client] No banking service")
-            exit()
-    else: send_rabbitmq(ACTION)
-    
-def send_rabbitmq(action):
+    if(ACTION == "loan"):
+        send_rabbitmq("loan", create_loan_message())
+    elif(ACTION == "transfer"):
+        send_rabbitmq("transfer", create_transfer_message())
+        
+def send_rabbitmq(action,message):
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
 
-    channel.exchange_declare(exchange='direct_logs', exchange_type='direct')
-    
+    channel.exchange_declare(exchange='direct_logs', exchange_type='direct')  
     key = "UserPreferencesServiceInput"
-    message = json.dumps({
-        "action": action,
-        "clientId": CLIENT_ID,
-        "bankingService": BANKING_SERVICE      
-    })
-    
+      
     channel.basic_publish(
         exchange='direct_logs', routing_key=key, body=message)
     print("[*][client] " + action + " was send")
 
     connection.close()
+
+def create_loan_message():
+    
+    message = json.dumps({
+        "type": "loan",
+        "data":[
+            {
+                "customerInformation":{
+                    "documentNumber":USER_ID,
+                    "idType":"CC"               
+                    },
+                "LoanInformation":{
+                    "loanNumber":OPERATION_ID,
+                    "participationNumber":12345,
+                    "paymentDate":"2001-10-26T21:32:52",
+                    "paymentType":"Pago Total o cancelacion",
+                    "accountType":"D",
+                    "accountNumber":1234567890123456,
+                    "PaymentValue":1245677,
+                    "depositTransactionCode":123458,
+                    "transactionDescriptionInDeposits":"se realizo la transaccion de manera exitosa",
+                    "transactionTrackingNumber":"000087888"           
+                    }     
+                }
+            ]   
+        })
+    
+    return message
+
+def create_transfer_message():
+    
+    message = json.dumps({
+        "type": "transfer",
+        "data":[
+            {
+                "customerInformation":{
+                    "documentNumber":USER_ID,
+                    "idType":"CC"               
+                    },
+                "transferInformation":{
+                    "transferNumber":OPERATION_ID,
+                    "participationNumber":12345,
+                    "paymentDate":"2001-10-26T21:32:52",
+                    "paymentType":"Pago Total o cancelacion",
+                    "accountType":"D",
+                    "accountNumber":1234567890123456,
+                    "PaymentValue":1245677,
+                    "destinationAccount":123458,
+                    "transactionDescriptionInDeposits":"se realizo la transaccion de manera exitosa",
+                    "transactionTrackingNumber":"000087888"           
+                    }     
+                }
+            ]   
+        }) 
+    
+    return message
     
 def run():
     read_parameters()
