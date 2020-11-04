@@ -64,7 +64,44 @@ def client_preferences(password, body):
         "pref_3": third_preference,     
     }) 
 
-    return message    
+    return message 
+
+def transfer_preferences(password, body):
+    eventJson = json.loads(body)
+    
+    bankingAccount=eventJson["data"][0]["transferInformation"]["accountNumber"]
+    action = "response"
+    first_preference = ""
+    second_preference = ""
+    third_preference = ""
+    db = store.connect_to_neo4j_db(password)
+    preferences = store.more_important_transfer(db,bankingAccount)
+        
+    try:
+        third_preference = preferences[2]
+    except IndexError:
+        pass
+
+    try:
+        second_preference = preferences[1]
+    except IndexError:
+        pass
+
+    try:
+        first_preference = preferences[0]
+    except IndexError:
+        pass
+    
+    message = json.dumps({
+        "action": action,
+        "bankingAccount": bankingAccount,
+        "pref_1": first_preference,
+        "pref_2": second_preference,
+        "pref_3": third_preference,     
+    }) 
+    
+    return message 
+
 
 def according_banking_service(password, eventJson):
     bankingService = eventJson["type"]
@@ -75,7 +112,6 @@ def according_banking_service(password, eventJson):
     elif(bankingService == "transfer"):
         write_transfer_data(password, eventJson)    
     
-
 def write_loan_data(db, data):
     store.create_loan(db,
                       data["data"][0]["customerInformation"]["documentNumber"],
@@ -92,21 +128,35 @@ def write_loan_data(db, data):
                       data["data"][0]["LoanInformation"]["transactionTrackingNumber"],
                       )
 
-def write_transfer_data(db, data):
+def write_transfer_data(db, data):  
+    clientId = data["data"][0]["customerInformation"]["documentNumber"]
+    accountNumber = data["data"][0]["transferInformation"]["accountNumber"]
+    dstAccountNumber = data["data"][0]["transferInformation"]["destinationAccount"]
+    
+    if(store.banking_account_exists(db,clientId,accountNumber)):
+        print("[*][controller] Banking account exists")
+    else:
+        store.create_banking_account(db,clientId,accountNumber)
+        store.create_client_account_relationship(db,clientId,accountNumber)
+        
     store.create_transfer(db,
-                      data["data"][0]["customerInformation"]["documentNumber"],
+                      clientId,
                       data["type"],
                       data["data"][0]["transferInformation"]["transferNumber"],
                       data["data"][0]["transferInformation"]["participationNumber"],
                       data["data"][0]["transferInformation"]["paymentDate"],
                       data["data"][0]["transferInformation"]["paymentType"],
                       data["data"][0]["transferInformation"]["accountType"],
-                      data["data"][0]["transferInformation"]["accountNumber"],
+                      accountNumber,
                       data["data"][0]["transferInformation"]["PaymentValue"],
-                      data["data"][0]["transferInformation"]["destinationAccount"],
+                      dstAccountNumber,
                       data["data"][0]["transferInformation"]["transactionDescriptionInDeposits"],
                       data["data"][0]["transferInformation"]["transactionTrackingNumber"],
                       )
     
+    if(store.transfer_relationship_exists(db,accountNumber,dstAccountNumber)):
+        store.add_importance_transfer(db,accountNumber,dstAccountNumber)
+    else:
+        store.create_transfer_relationship(db,clientId,accountNumber,dstAccountNumber)
     
     

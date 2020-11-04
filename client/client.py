@@ -97,9 +97,9 @@ def create_transfer_message():
                     "paymentDate":"2001-10-26T21:32:52",
                     "paymentType":"Pago Total o cancelacion",
                     "accountType":"D",
-                    "accountNumber":1234567890123456,
+                    "accountNumber":11,
                     "PaymentValue":1245677,
-                    "destinationAccount":123458,
+                    "destinationAccount":13,
                     "transactionDescriptionInDeposits":"se realizo la transaccion de manera exitosa",
                     "transactionTrackingNumber":"000087888"           
                     }     

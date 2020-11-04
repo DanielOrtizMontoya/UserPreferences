@@ -19,7 +19,7 @@ def create_client_node(db,clientId):
     command = "CREATE (client:Client {name:'%(name)s'} )" %{"name":clientId}
     db.run(command)
     print("[*][store] Client node name: {} , was created".format(clientId))
-    
+
 def banking_service_exists(db,clientId,bankingService):
     command = "MATCH (s:BankingService {name:'%(bankingService)s', client:'%(name)s' }) return s" %{"bankingService": bankingService,
                                                                                                     "name":clientId}   
@@ -30,12 +30,29 @@ def banking_service_exists(db,clientId,bankingService):
     else:
         print("[*][store] BankingService node name: {} ,exist".format(bankingService))
         return True
+       
+def banking_account_exists(db,clientId,accountNumber):
+    command = "MATCH (a:BankingAccount {name:%(accountNumber)s, client:'%(name)s' }) return a" %{"accountNumber": accountNumber,
+                                                                                                    "name":clientId}   
+    query= db.run(command)       
+    if(str(query)==""):
+        print("[x][store] BankingAccount node number: {} , does not exist".format(accountNumber))
+        return False
+    else:
+        print("[*][store] BankingAccount node number: {} ,exist".format(accountNumber))
+        return True
     
 def create_banking_service(db,clientId,bankingService):
     command = "CREATE (bs:BankingService {name:'%(bankingService)s', client:'%(name)s', importance: 0} )" %{"name":clientId,
                                                                                                   "bankingService":bankingService}
     db.run(command)
     print("[*][store] BankingService node name: {} , was created".format(bankingService))
+    
+def create_banking_account(db,clientId,accountNumber):
+    command = "CREATE (a:BankingAccount {name:%(accountNumber)s, client:'%(name)s', importance: 0} )" %{"name":clientId,
+                                                                                                  "accountNumber":accountNumber}
+    db.run(command)
+    print("[*][store] BankingAccount node name: {} , was created".format(accountNumber))
     
 def create_client_banking_relationship(db,clientId,bankingService):
     command = """MATCH (c:Client {name:'%(clientName)s'})
@@ -45,6 +62,39 @@ CREATE (c)-[:USE{graph_weight:[0]}]->(b)
     db.run(command)
     print("[*][store] Relationship ({})-USE->({}) , was created"
           .format(clientId,bankingService))
+    
+def create_client_account_relationship(db,clientId,accountNumber):
+    command = """MATCH (c:Client {name:'%(clientName)s'})
+MATCH (a:BankingAccount {name:%(accountNumber)s, client:'%(clientName)s'})
+CREATE (c)-[:HAVE{graph_weight:[0]}]->(a)
+""" %{"clientName":clientId, "accountNumber":accountNumber}
+    db.run(command)
+    print("[*][store] Relationship, Account. ({})-HAVE->({}) , was created"
+          .format(clientId,accountNumber))
+    
+def create_transfer_relationship(db,clientId,srcAccountNumber,dstAccountNumber):
+    command = """MATCH (sa:BankingAccount {name:%(srcAccountNumber)s, client:'%(clientId)s'})
+MATCH (da:BankingAccount {name:%(dstAccountNumber)s})
+CREATE (sa)-[:TRANSFERRED{importance:0, srcAccountNumber:%(srcAccountNumber)s, dstAccountNumber:%(dstAccountNumber)s}]->(da)
+""" %{"clientId":clientId,
+    "srcAccountNumber":srcAccountNumber,
+    "dstAccountNumber":dstAccountNumber}
+    db.run(command)
+    print("[*][store] Relationship, Transfer. ({})-TRANSFERRED->({}) , was created"
+          .format(srcAccountNumber,dstAccountNumber))
+   
+def transfer_relationship_exists(db,srcAccountNumber,dstAccountNumber):
+    command="MATCH (acs:BankingAccount {name:%(srcAccountNumber)s})-[t:TRANSFERRED]->(acd:BankingAccount {name:%(dstAccountNumber)s}) return t" %{
+                                                                                "srcAccountNumber":srcAccountNumber,
+                                                                                "dstAccountNumber":dstAccountNumber}
+    query=db.run(command)    
+    
+    if(str(query)==""):
+        print("[x][store] Transfer Relationship , does not exist")
+        return False
+    else:
+        print("[*][store] Transfer Relationship, exist")
+        return True   
     
 def add_importance_banking_service(db,clientId,bankingService):
     command_read = "MERGE (bs:BankingService {name: '%(bankingService)s', client:'%(name)s'}) return bs" %{"bankingService":bankingService,
@@ -71,6 +121,19 @@ def more_important_banking_services(db, clientId):
         preferences.append(str(results[i]['bs'].get("name")))
     
     return preferences
+
+def more_important_transfer(db,bankingAccount):
+    command = "MATCH (acs:BankingAccount {name:%(bankingAccount)s})-[t:TRANSFERRED]->(n) RETURN t ORDER BY t.importance DESC" %{
+        "bankingAccount": bankingAccount}
+    query=db.run(command)
+    results = [record for record in query.data()]
+    preferences = []
+    print(results)
+        
+    for i in range(len(results)):
+        preferences.append(str(results[i]['t'].get("dstAccountNumber")))
+    
+    return preferences    
 
 def create_loan(db,
                 clientId,
@@ -174,19 +237,23 @@ CREATE (b)-[:DID{graph_weight:[0]}]->(t)
     
     print("[*][store] Transfer , was created")
 
+def add_importance_transfer(db,srcAccountNumber,dstAccountNumber):
+    command_read = "MATCH (acs:BankingAccount {name:%(srcAccountNumber)s})-[t:TRANSFERRED]->(acd:BankingAccount {name:%(dstAccountNumber)s}) return t" %{
+                                                                                "srcAccountNumber":srcAccountNumber,
+                                                                                "dstAccountNumber":dstAccountNumber}
+    query=db.run(command_read)
+    results = [record for record in query.data()]
+    importance = (results[0]['t'].get("importance")) + 1
+    
+    
+    command_write = "MATCH (acs:BankingAccount {name:%(srcAccountNumber)s})-[t:TRANSFERRED]->(acd:BankingAccount {name:%(dstAccountNumber)s}) SET t.importance = %(importance)s" %{
+                                                                                "srcAccountNumber":srcAccountNumber,
+                                                                                "dstAccountNumber":dstAccountNumber,
+                                                                                "importance":importance}  
+    db.run(command_write)
+    print("[*][store] Importance is {}".format(importance))
 
-    
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
