@@ -1,6 +1,7 @@
 import pika
 import controller as ct
 import sys
+import json
 
 def read_password_db():
     global PASSWORD_DB
@@ -28,17 +29,28 @@ def connect_rabbitmq():
     print(' [*][ep rabbit] Waiting for logs. To exit press CTRL+C')
                 
     channel.basic_consume(
-        queue=queue_name, on_message_callback=callback, auto_ack=True)
+        queue=queue_name, on_message_callback=callback_new_event, auto_ack=True)
     
     channel.start_consuming()
     
-def callback(ch, method, properties, body):  
-    ct.client_event(PASSWORD_DB,body)
+def callback_new_event(ch, method, properties, body):  
+    eventJson = json.loads(body)
+    action = eventJson["type"]
     
-    message=ct.client_preferences(PASSWORD_DB, body)
+    if(action == "getClientBankingServicesPreferences"):
+        message=ct.client_banking_services_preferences(PASSWORD_DB,body)
+    
+    elif(action == "getAccountsPreferences"):
+        message=ct.accounts_preferences(PASSWORD_DB,body)
+    
+    else:
+        message=ct.client_event(PASSWORD_DB,body)
+    
     key = "UserPreferencesServiceOutput"
     ch.basic_publish(
-        exchange='direct_logs', routing_key=key, body=message)     
+        exchange='direct_logs', routing_key=key, body=message)
+    
+ 
                     
 def run():
     read_password_db()

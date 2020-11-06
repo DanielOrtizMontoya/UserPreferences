@@ -29,8 +29,15 @@ def client_event(password, body):
 
     according_banking_service(db, eventJson)
     
+    message = json.dumps({
+        "response": "registered",    
+    }) 
+
+    return message    
     
-def client_preferences(password, body):
+    
+    
+def client_banking_services_preferences(password, body):
     eventJson = json.loads(body)
     
     clientId=eventJson["data"][0]["customerInformation"]["documentNumber"]
@@ -66,10 +73,10 @@ def client_preferences(password, body):
 
     return message 
 
-def transfer_preferences(password, body):
+def accounts_preferences(password, body):
     eventJson = json.loads(body)
     
-    bankingAccount=eventJson["data"][0]["transferInformation"]["accountNumber"]
+    bankingAccount=eventJson["data"][0]["accountInformation"]["accountNumber"]
     action = "response"
     first_preference = ""
     second_preference = ""

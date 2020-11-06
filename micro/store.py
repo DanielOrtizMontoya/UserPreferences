@@ -128,7 +128,6 @@ def more_important_transfer(db,bankingAccount):
     query=db.run(command)
     results = [record for record in query.data()]
     preferences = []
-    print(results)
         
     for i in range(len(results)):
         preferences.append(str(results[i]['t'].get("dstAccountNumber")))

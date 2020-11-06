@@ -1,45 +1,8 @@
-import pika
-import sys
+from flask import Flask, request, jsonify
 import json
+import pika
 
-def read_parameters():
-    global ACTION 
-    global OPERATION_ID
-    global USER_ID
-
-    ACTION = ""
-    OPERATION_ID = ""
-    USER_ID = ""
-   
-    try:
-        ACTION = sys.argv[1]
-    except IndexError:
-        print("[x][client] No action")
-        exit()
-
-    try:
-        USER_ID = sys.argv[2]
-    except IndexError:
-        print("[x][client] No user ID")
-        exit()
-        
-    try:
-        OPERATION_ID = int(sys.argv[3])
-    except IndexError:
-        print("[x][client] No ID operation")
-        exit()
-        
-    if(ACTION != "loan" and ACTION != "transfer"):
-        print("[x][client] invalid action (use loan or transfer)")
-        exit()
-        
-def take_action():
-    if(ACTION == "loan"):
-        send_rabbitmq("loan", create_loan_message())
-    elif(ACTION == "transfer"):
-        send_rabbitmq("transfer", create_transfer_message())
-        
-def send_rabbitmq(action,message):
+def send_rabbitmq(message):
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
@@ -49,72 +12,68 @@ def send_rabbitmq(action,message):
       
     channel.basic_publish(
         exchange='direct_logs', routing_key=key, body=message)
-    print("[*][client] " + action + " was send")
+    print("[*][client] Event sent")
 
     connection.close()
+    
+def read_rabbitmq_response():
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(host='localhost'))
+    channel = connection.channel()
+    
+    channel.exchange_declare(exchange='direct_logs', exchange_type='direct')
+    
+    result = channel.queue_declare(queue='', exclusive=True)
+    queue_name = result.method.queue
+    
+    key = "UserPreferencesServiceOutput"
+    channel.queue_bind(
+        exchange='direct_logs', queue=queue_name, routing_key=key)
+    
+    print('[*][ui] Waiting for logs. To exit press CTRL+C')
+                
+    channel.basic_consume(
+        queue=queue_name, on_message_callback=callback, auto_ack=True)
+    
+    channel.start_consuming() 
 
-def create_loan_message():
+def callback(ch, method, properties, body): 
+    global RES_MESSAGE
+    RES_MESSAGE = body
+    ch.stop_consuming()
     
-    message = json.dumps({
-        "type": "loan",
-        "data":[
-            {
-                "customerInformation":{
-                    "documentNumber":USER_ID,
-                    "idType":"CC"               
-                    },
-                "LoanInformation":{
-                    "loanNumber":OPERATION_ID,
-                    "participationNumber":12345,
-                    "paymentDate":"2001-10-26T21:32:52",
-                    "paymentType":"Pago Total o cancelacion",
-                    "accountType":"D",
-                    "accountNumber":1234567890123456,
-                    "PaymentValue":1245677,
-                    "depositTransactionCode":123458,
-                    "transactionDescriptionInDeposits":"se realizo la transaccion de manera exitosa",
-                    "transactionTrackingNumber":"000087888"           
-                    }     
-                }
-            ]   
-        })
-    
-    return message
+app = Flask(__name__)
 
-def create_transfer_message():
+@app.route('/event', methods=['POST'])
+def event():
+    if request.method == "POST":
+        req_Json = request.json
+        req_message = json.dumps(req_Json)
+        send_rabbitmq(req_message)     
+        return jsonify({"response":"event sent"})        
     
-    message = json.dumps({
-        "type": "transfer",
-        "data":[
-            {
-                "customerInformation":{
-                    "documentNumber":USER_ID,
-                    "idType":"CC"               
-                    },
-                "transferInformation":{
-                    "transferNumber":OPERATION_ID,
-                    "participationNumber":12345,
-                    "paymentDate":"2001-10-26T21:32:52",
-                    "paymentType":"Pago Total o cancelacion",
-                    "accountType":"D",
-                    "accountNumber":11,
-                    "PaymentValue":1245677,
-                    "destinationAccount":13,
-                    "transactionDescriptionInDeposits":"se realizo la transaccion de manera exitosa",
-                    "transactionTrackingNumber":"000087888"           
-                    }     
-                }
-            ]   
-        }) 
+@app.route('/preferences/bankingservices', methods=['GET'])
+def preferences_bankingservices():
+    if request.method == "GET":
+        req_Json = request.json
+        req_message = json.dumps(req_Json)
+        send_rabbitmq(req_message) 
+        
+        read_rabbitmq_response()
+        res_json = json.loads(RES_MESSAGE)  
+        return jsonify(res_json)
     
-    return message
+@app.route('/preferences/accounts', methods=['GET'])
+def preferences_accounts():
+    if request.method == "GET":
+        req_Json = request.json
+        req_message = json.dumps(req_Json)
+        send_rabbitmq(req_message) 
+        
+        read_rabbitmq_response()
+        res_json = json.loads(RES_MESSAGE)  
+        return jsonify(res_json)
     
-def run():
-    read_parameters()
-    take_action()
-
 if __name__ == '__main__':
-    run()
-    
 
-
+    app.run(debug=True, port=9090)
