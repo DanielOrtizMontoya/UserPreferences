@@ -97,22 +97,24 @@ def transfer_relationship_exists(db,srcAccountNumber,dstAccountNumber):
         return True   
     
 def add_importance_banking_service(db,clientId,bankingService):
-    command_read = "MERGE (bs:BankingService {name: '%(bankingService)s', client:'%(name)s'}) return bs" %{"bankingService":bankingService,
-                                                                                                                    "name":clientId}
+    command_read = "MERGE (bs:BankingService {name: '%(bankingService)s', client:'%(name)s'}) return bs" %{
+                                                                            "bankingService":bankingService,
+                                                                            "name":clientId}
     query=db.run(command_read)
     results = [record for record in query.data()]
     importance = int(results[0]['bs'].get("importance"))
     importance = str(importance + 1)
     
-    command_write = "MERGE (bs:BankingService {name: '%(bankingService)s', client:'%(name)s'}) SET bs.importance = %(importance)s" %{
-                                                                                                            "bankingService":bankingService,
-                                                                                                            "name":clientId,
-                                                                                                            "importance":importance}
+    command_write="MERGE(bs:BankingService{name:'%(bankingService)s',client:'%(name)s'}) SET bs.importance=%(importance)s" %{
+                                                                                                "bankingService":bankingService,
+                                                                                                "name":clientId,
+                                                                                                "importance":importance}
     db.run(command_write)
     print("[*][store] Importance is {} in {}'s {} ".format(importance,clientId,bankingService))
     
 def more_important_banking_services(db, clientId):
-    command = "MATCH (bs:BankingService{client:'%(name)s'}) RETURN bs ORDER BY bs.importance DESC" %{"name": clientId}
+    command = "MATCH (bs:BankingService{client:'%(name)s'}) RETURN bs ORDER BY bs.importance DESC" %{
+        "name": clientId}
     query=db.run(command)
     results = [record for record in query.data()]
     preferences = []

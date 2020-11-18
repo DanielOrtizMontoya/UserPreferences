@@ -1,7 +1,6 @@
 import pika
 import controller as ct
 import sys
-import json
 
 def read_password_db():
     global PASSWORD_DB
@@ -34,24 +33,8 @@ def connect_rabbitmq():
     channel.start_consuming()
     
 def callback_new_event(ch, method, properties, body):  
-    eventJson = json.loads(body)
-    action = eventJson["type"]
-    
-    if(action == "getClientBankingServicesPreferences"):
-        message=ct.client_banking_services_preferences(PASSWORD_DB,body)
-    
-    elif(action == "getAccountsPreferences"):
-        message=ct.accounts_preferences(PASSWORD_DB,body)
-    
-    else:
-        message=ct.client_event(PASSWORD_DB,body)
-    
-    key = "UserPreferencesServiceOutput"
-    ch.basic_publish(
-        exchange='direct_logs', routing_key=key, body=message)
-    
- 
-                    
+    ct.client_event(PASSWORD_DB,body)
+                         
 def run():
     read_password_db()
     connect_rabbitmq()
