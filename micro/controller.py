@@ -35,8 +35,6 @@ def client_event(password, body):
 
     return message    
     
-    
-    
 def client_banking_services_preferences(password, body):
     eventJson = json.loads(body)
     
@@ -108,7 +106,6 @@ def accounts_preferences(password, body):
     }) 
     
     return message 
-
 
 def according_banking_service(password, eventJson):
     bankingService = eventJson["type"]
