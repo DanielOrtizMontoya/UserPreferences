@@ -27,7 +27,6 @@ def preferences_services():
         except:
             return abort(400)
         
-
 @app.route('/preferences/accounts', methods=['GET'])
 def preferences_accounts():
     if request.method == "GET":
