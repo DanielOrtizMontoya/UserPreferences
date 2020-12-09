@@ -47,7 +47,7 @@ The microservice is divided into 4 components, separating the functionalities.
 
  This component establishes the connection with the database. Run the necessary read and write commands.
 
- #### 4. EntryPoint HTTP
+ #### 4. EndPoint HTTP
 
  This component has an API that receives requests and returns user preferences.
 
