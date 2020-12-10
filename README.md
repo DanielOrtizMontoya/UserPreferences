@@ -57,9 +57,13 @@ The database used in this project is an instance of Neo4j (graph-oriented databa
 
 ## Run
 
-Run Entry Point RabbiMQ:
+Docker:
 
     docker start rabbitmq
+    docker start testneo4j
+    
+Run Entry Point RabbiMQ:
+
     python entry_point_rabbitmq.py <password_database>
     
 Run End Point HTTP:
