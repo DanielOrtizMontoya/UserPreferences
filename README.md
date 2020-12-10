@@ -55,6 +55,17 @@ The microservice is divided into 4 components, separating the functionalities.
 
 The database used in this project is an instance of Neo4j (graph-oriented database). This database was used because it is better than traditional relational databases, if you work with related information. This component is deployed in docker.
 
+## Run
+
+Run Entry Point RabbiMQ:
+
+    docker start rabbitmq
+    python entry_point_rabbitmq.py <password_database>
+    
+Run End Point HTTP:
+
+    python end_point_http.py <password_database>
+
 
 ## References 
 
