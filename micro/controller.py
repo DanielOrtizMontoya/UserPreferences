@@ -1,14 +1,35 @@
 import store
 import json
 
-def check_client_exists(password, clientId):
+def check_client_exists(password,clientId):
     db = store.connect_to_neo4j_db(password)
     
     if(store.client_exists(db, clientId)):
         return True
     else:
         return False
+
+def new_event(password,body):
+    try:
+        eventJson = json.loads(body)
+        if (eventJson["name"]=="business.authorizationServices.authentication.blm.distributionMicroservice.authenticationDone"):
+            client_authentication(password,body)
+        else:
+            pass
+    except:
+        client_event(password, body)
+
+def client_authentication(password,body):
+    db = store.connect_to_neo4j_db(password)
+    eventJson = json.loads(body)
+    clientId = eventJson["data"]["data"]["credential"]["userCredential"]["username"]
+    clientId = clientId[3:]
     
+    if (store.client_exists(db,clientId)):
+        print("[*][controller] client exists")
+    else:
+        store.create_client_node(db,clientId)
+            
 def client_event(password, body):
     db = store.connect_to_neo4j_db(password)
     eventJson = json.loads(body)
@@ -28,12 +49,7 @@ def client_event(password, body):
         store.create_client_banking_relationship(db,clientId,bankingService)    
 
     according_banking_service(db, eventJson)
-    
-    message = json.dumps({
-        "response": "registered",    
-    }) 
-
-    return message    
+       
     
 def client_banking_services_preferences(password, body):
     eventJson = json.loads(body)

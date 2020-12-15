@@ -33,7 +33,7 @@ def connect_rabbitmq():
     channel.start_consuming()
     
 def callback_new_event(ch, method, properties, body):  
-    ct.client_event(PASSWORD_DB,body)
+    ct.new_event(PASSWORD_DB,body)
                          
 def run():
     read_password_db()
