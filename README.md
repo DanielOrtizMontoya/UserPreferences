@@ -1,6 +1,6 @@
 # User's Banking Preferences
 
-The goal of this project is to create a microservice. This microservice is responsible for identifying the functionalities most used by customers in a bank's digital channels.
+The goal of this project is to create a microservice. This microservice is responsible for identifying the functionalities most used by customers in bank's digital channels.
 
 ## Libraries and requirements
 
